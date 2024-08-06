@@ -1,9 +1,10 @@
 import logging
-import textwrap
 
 import click
 import cloudpickle
+import numpy as np
 import polars as pl
+import torch
 import torch.nn.functional as F
 from datasets import load_dataset
 from langchain_text_splitters import SentenceTransformersTokenTextSplitter
@@ -12,6 +13,9 @@ from transformers import AutoModel, AutoTokenizer
 
 
 def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
+    """
+    アベレージプーリング
+    """
     last_hidden = last_hidden_states.masked_fill(
         ~attention_mask[..., None].bool(), 0.0
     )
@@ -19,40 +23,45 @@ def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
 
 
 chunk_overlap = 50
+prefix_tokens = 10
 model_name = "intfloat/multilingual-e5-small"
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+print(f"{device=}")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name).to(device)
 splitter = SentenceTransformersTokenTextSplitter(
-    model_name=model_name, chunk_overlap=chunk_overlap
+    model_name=model_name,
+    chunk_overlap=chunk_overlap,
+    tokens_per_chunk=tokenizer.model_max_length - prefix_tokens,
 )
 
 
 def make_sentence(row):
-    title = row[2]
-    body = row[3]
-    sentence = f"""
-        ### タイトル
-
-        {title}
-
-        ### 本文
-
-        {body}
     """
-    sentence = textwrap.dedent(sentence)
+    センテンスを組み立てる
+    """
+    sentence = ""
+    sentence += "### タイトル\n\n"
+    sentence += row[2]  # title
+    sentence += "\n### 本文\n\n"
+    sentence += row[3]  # body
     return sentence
 
 
+@torch.no_grad()
 def embed(sentences, normalize=False):
+    """
+    埋め込み表現を得る
+    """
 
     # Tokenize the input texts
     batch_dict = tokenizer(
         sentences,
-        max_length=512,
+        # max_length=512,
         padding=True,
         truncation=True,
         return_tensors="pt",
-    )
+    ).to(device)
 
     outputs = model(**batch_dict)
     embeddings = average_pool(
@@ -66,16 +75,47 @@ def embed(sentences, normalize=False):
 
 
 def split_and_embed(row):
-    sentence = row[5]
+    """
+    センテンスの分割と埋め込み処理
+    """
+    sentence = row[0]
+    sentence_chars = len(sentence)
+    logger = logging.getLogger(__name__)
     text_chunks = splitter.split_text(text=sentence)
-    embeddings = embed([f"passage: {x}" for x in text_chunks])
-    return embeddings
+    text_chunks = [f"passage: {x}" for x in text_chunks]
+
+    batch_ids = tokenizer(
+        text_chunks,
+        max_length=tokenizer.model_max_length,
+        padding=True,
+        truncation=True,
+        return_tensors="pt",
+    )
+    token_counts = np.array(batch_ids["attention_mask"]).sum(axis=1).tolist()
+    total_tokens = np.array(batch_ids["attention_mask"]).sum().item()
+    char_counts = [len(x) for x in text_chunks]
+    total_chars = sum(char_counts)
+    metrics = {
+        "token_counts": token_counts,
+        "total_tokens": total_tokens,
+        "char_counts": char_counts,
+        "total_chars": total_chars,
+        "sentence_chars": sentence_chars,
+    }
+    logger.info(metrics)
+    embeddings = torch.flatten(embed(text_chunks)).tolist()
+    return (embeddings, total_chars, total_tokens, sentence_chars)
 
 
 def parse_dataset(ds, limit: int = 0):
+    """
+    データセットをパースして埋め込みを計算する
+    """
 
+    # polars.DataFrame を取得
     result = ds.to_polars()
 
+    # リミット処理(開発用)
     if limit > 0:
         result = result.head(limit)
 
@@ -88,24 +128,38 @@ def parse_dataset(ds, limit: int = 0):
     sentence = result.map_rows(make_sentence).select(
         pl.col("map").alias("sentence")
     )
-    result = result.with_columns(sentence)
-    embeddings = result.map_rows(split_and_embed).select(
-        pl.col("map").alias("embed")
+    embeddings = sentence.map_rows(split_and_embed).rename(
+        {
+            "column_0": "embed",
+            "column_1": "total_chars",
+            "column_2": "total_tokens",
+            "column_3": "sentence_chars",
+        }
     )
-    print(embeddings)
-    result = result.with_columns(embeddings)
-    result.write_excel("data/temp.xlsx")
+    result = pl.concat([result, sentence, embeddings], how="horizontal")
     return result
 
 
 def make_dataset(dataset, limit: int = 0):
+    """
+    Train、Validation、Test のデータを作る。辞書形式で返す。
+    """
+
+    # logger 初期化
     logger = logging.getLogger(__name__)
+
+    # 結果を返す変数を初期化
     results = {}
+
     for key in dataset:
+        # 進捗表示
         logger.info(f"==== {key}")
+
+        # パースと埋め込み計算
         results[key] = parse_dataset(dataset[key], limit=limit)
 
-    logger.info(results)
+        # デバッグ出力
+        results[key].write_excel(f"data/debug_{key}.xlsx")
 
     return results
 
@@ -115,8 +169,15 @@ def make_dataset(dataset, limit: int = 0):
 @click.option("--limit", type=int, default=0)
 def main(**kwargs):
 
-    raw_dataset = load_dataset("shunk031/livedoor-news-corpus")
+    # load raw dataset
+    raw_dataset = load_dataset(
+        "shunk031/livedoor-news-corpus", trust_remote_code=True
+    )
+
+    # make dataset
     dataset = make_dataset(raw_dataset, limit=kwargs["limit"])
+
+    # output to cloudpickle
     cloudpickle.dump(dataset, open(kwargs["output_filepath"], "wb"))
 
 
