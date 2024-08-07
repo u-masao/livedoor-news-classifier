@@ -6,13 +6,13 @@ stages:
     deps:
     - path: src/make_dataset.py
       hash: md5
-      md5: 6a0f6adec00955e1aedbdebb5023529d
-      size: 3513
+      md5: 9daed7f37674a111395105075fb9f820
+      size: 3592
     outs:
     - path: data/interim/dataset_limit-10_co-50_tm-20.cloudpickle
       hash: md5
-      md5: c6fdc28289909a94a911b3e2e376d661
-      size: 390784
+      md5: d52199c5dc17e25ae7a7d269c54f0ff8
+      size: 390808
   make_dataset@0-50-20:
     cmd: poetry run python -m src.make_dataset data/interim/dataset_limit-0_co-50_tm-20.cloudpickle
       --use_gpu=true --limit=0 --chunk_overlap=50 --token_margin=20 --model_name=intfloat/multilingual-e5-small
