@@ -1,0 +1,18 @@
+stages:
+  make_dataset:
+    matrix:
+      dataset_limit: ${dataset_limits}
+      chunk_overlap: ${chunk_overlaps}
+      token_margin: ${token_margins}
+    cmd: >-
+      poetry run python -m src.make_dataset
+      data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}.cloudpickle
+      --use_gpu=${use_gpu}
+      --limit=${item.dataset_limit}
+      --chunk_overlap=${item.chunk_overlap}
+      --token_margin=${item.token_margin}
+      --model_name=${model_name}
+    deps:
+    - src/make_dataset.py
+    outs:
+    - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}.cloudpickle
