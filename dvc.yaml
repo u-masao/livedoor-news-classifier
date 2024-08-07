@@ -7,7 +7,7 @@ stages:
       combine_method: ${combine_methods}
     cmd: >-
       poetry run python -m src.make_dataset
-    - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}_cm-${item.combine_method}.cloudpickle
+      data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}_cm-${item.combine_method}.cloudpickle
       --use_gpu=${use_gpu}
       --limit=${item.dataset_limit}
       --chunk_overlap=${item.chunk_overlap}
