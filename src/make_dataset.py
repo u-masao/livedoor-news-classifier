@@ -133,7 +133,7 @@ def make_dataset(
 @click.option("--limit", type=int, default=0)
 @click.option("--normalize", type=bool, default=False)
 @click.option(
-    "--combie_method", type=str, default="weighted", help="weighted or mean"
+    "--combine_method", type=str, default="weighted", help="weighted or mean"
 )
 def main(**kwargs):
 
@@ -151,7 +151,7 @@ def main(**kwargs):
         use_gpu=kwargs["use_gpu"],
         limit=kwargs["limit"],
         normalize=kwargs["normalize"],
-        combine_method=kwargs["combie_method"],
+        combine_method=kwargs["combine_method"],
     )
 
     # output to cloudpickle
