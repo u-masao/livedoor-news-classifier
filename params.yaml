@@ -1,10 +1,13 @@
 dataset_limits:
-  # - 0
-  - 10
+  - 0
+  # - 10
 chunk_overlaps:
   - 50
 token_margins:
   - 20
-
 model_name: "intfloat/multilingual-e5-small"
 use_gpu: True
+normalize: False
+combine_methods:
+  - mean
+  - weighted

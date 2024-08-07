@@ -4,16 +4,19 @@ stages:
       dataset_limit: ${dataset_limits}
       chunk_overlap: ${chunk_overlaps}
       token_margin: ${token_margins}
+      combine_method: ${combine_methods}
     cmd: >-
       poetry run python -m src.make_dataset
-      data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}.cloudpickle
+    - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}_cm-${item.combine_method}.cloudpickle
       --use_gpu=${use_gpu}
       --limit=${item.dataset_limit}
       --chunk_overlap=${item.chunk_overlap}
       --token_margin=${item.token_margin}
       --model_name=${model_name}
+      --normalize=${normalize}
+      --combine_method=${item.combine_method}
     deps:
     - src/make_dataset.py
     - src/encoder.py
     outs:
-    - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}.cloudpickle
+    - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}_cm-${item.combine_method}.cloudpickle
