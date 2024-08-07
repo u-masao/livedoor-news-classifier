@@ -30,3 +30,39 @@ stages:
       hash: md5
       md5: c50c1db29314289c46ac34b2a4096216
       size: 97225175
+  make_dataset@0-50-20-mean:
+    cmd: poetry run python -m src.make_dataset data/interim/dataset_limit-0_co-50_tm-20_cm-mean.cloudpickle
+      --use_gpu=true --limit=0 --chunk_overlap=50 --token_margin=20 --model_name=intfloat/multilingual-e5-small
+      --normalize=false --combine_method=mean
+    deps:
+    - path: src/encoder.py
+      hash: md5
+      md5: 846db1dad431d7f34d1a99431de8e947
+      size: 6137
+    - path: src/make_dataset.py
+      hash: md5
+      md5: 6ef57682eb018fec77b46750d76d65e5
+      size: 4142
+    outs:
+    - path: data/interim/dataset_limit-0_co-50_tm-20_cm-mean.cloudpickle
+      hash: md5
+      md5: 046f8a31d0e4ea0e97fbf794ddff4e14
+      size: 75229663
+  make_dataset@0-50-20-weighted:
+    cmd: poetry run python -m src.make_dataset data/interim/dataset_limit-0_co-50_tm-20_cm-weighted.cloudpickle
+      --use_gpu=true --limit=0 --chunk_overlap=50 --token_margin=20 --model_name=intfloat/multilingual-e5-small
+      --normalize=false --combine_method=weighted
+    deps:
+    - path: src/encoder.py
+      hash: md5
+      md5: 846db1dad431d7f34d1a99431de8e947
+      size: 6137
+    - path: src/make_dataset.py
+      hash: md5
+      md5: 6ef57682eb018fec77b46750d76d65e5
+      size: 4142
+    outs:
+    - path: data/interim/dataset_limit-0_co-50_tm-20_cm-weighted.cloudpickle
+      hash: md5
+      md5: 139995e4db0c136ef1bd559efd569191
+      size: 75229663
