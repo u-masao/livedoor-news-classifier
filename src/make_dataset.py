@@ -24,6 +24,8 @@ def parse_dataset(
     ds,
     encoder: LongTextEncoder,
     limit: int = 0,
+    normalize: bool = False,
+    combine_method: str = "weighted",
 ):
     """
     データセットをパースして埋め込みを計算する
@@ -50,7 +52,11 @@ def parse_dataset(
     )
 
     # 埋め込み計算
-    embeddings = sentence.map_rows(encoder.split_and_embed).rename(
+    embeddings = sentence.map_rows(
+        lambda x: encoder.split_and_encode(
+            x, normalize=normalize, combine_method=combine_method
+        )
+    ).rename(
         {
             "column_0": "embed",
             "column_1": "token_counts",
@@ -74,6 +80,8 @@ def make_dataset(
     chunk_overlap: int = 50,
     token_margin: int = 20,
     use_gpu: bool = True,
+    normalize: bool = False,
+    combine_method: str = "weighted",
 ):
     """
     Train、Validation、Test のデータを作る。辞書形式で返す。
@@ -104,6 +112,8 @@ def make_dataset(
             dataset[key],
             encoder,
             limit=limit,
+            normalize=normalize,
+            combine_method=combine_method,
         )
 
         # デバッグ出力
@@ -121,6 +131,10 @@ def make_dataset(
 @click.option("--token_margin", type=int, default=20)
 @click.option("--use_gpu", type=bool, default=False)
 @click.option("--limit", type=int, default=0)
+@click.option("--normalize", type=bool, default=False)
+@click.option(
+    "--combie_method", type=str, default="weighted", help="weighted or mean"
+)
 def main(**kwargs):
 
     # load raw dataset
@@ -136,6 +150,8 @@ def main(**kwargs):
         token_margin=kwargs["token_margin"],
         use_gpu=kwargs["use_gpu"],
         limit=kwargs["limit"],
+        normalize=kwargs["normalize"],
+        combine_method=kwargs["combie_method"],
     )
 
     # output to cloudpickle
