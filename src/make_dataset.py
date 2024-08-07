@@ -53,9 +53,11 @@ def parse_dataset(
     embeddings = sentence.map_rows(encoder.split_and_embed).rename(
         {
             "column_0": "embed",
-            "column_1": "total_chars",
+            "column_1": "token_counts",
             "column_2": "total_tokens",
-            "column_3": "sentence_chars",
+            "column_3": "char_counts",
+            "column_4": "total_chars",
+            "column_5": "sentence_chars",
         }
     )
 
