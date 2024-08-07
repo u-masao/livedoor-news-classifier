@@ -97,7 +97,7 @@ class LongTextEncoder:
 
         metrics = self.count_tokens(sentence, text_chunks)
         logger.info(metrics)
-        return [embeddings] + list(metrics.values())
+        return tuple([embeddings] + list(metrics.values()))
 
     def count_tokens(self, sentence: str, text_chunks: List[str]):
         # tokenize for token counts

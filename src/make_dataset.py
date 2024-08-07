@@ -5,7 +5,7 @@ import cloudpickle
 import polars as pl
 from datasets import load_dataset
 
-from src.long_text_encoder import LongTextEncoder
+from src.encoder import LongTextEncoder
 
 
 def make_sentence(row):
