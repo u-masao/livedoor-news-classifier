@@ -1,3 +1,4 @@
+## linter formatter
 lint:
 	poetry run isort src
 	poetry run black -l 79 src
@@ -19,3 +20,9 @@ check_commit:
 	git status
 	git diff --exit-code
 	git diff --exit-code --staged
+
+## start docker compose
+start_qdrant:
+	docker compose up -d
+	poetry run python -m src.init_qdrant \
+	    data/interim/dataset_limit-0_co-50_tm-20_cm-weighted.cloudpickle
