@@ -1,6 +1,6 @@
 dataset_limits:
-  # - 0
-  - 10
+  - 0
+  # - 10
 chunk_overlaps:
   - 50
 token_margins:
