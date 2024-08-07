@@ -14,5 +14,6 @@ stages:
       --model_name=${model_name}
     deps:
     - src/make_dataset.py
+    - src/encoder.py
     outs:
     - data/interim/dataset_limit-${item.dataset_limit}_co-${item.chunk_overlap}_tm-${item.token_margin}.cloudpickle
